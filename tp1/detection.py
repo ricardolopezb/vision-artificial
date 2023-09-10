@@ -52,8 +52,8 @@ def main():
     cv.createTrackbar("threshold", window_name, 100, 300, trackbar_dummy_function)
     cv.createTrackbar("kernel size", window_name, 10, 20, trackbar_dummy_function)
 
-    my_dick_contours = {}
-    saved_contours = my_dick_contours.values()
+    my_contours_dict = {}
+    saved_contours = my_contours_dict.values()
 
     while True:
         _, original_frame = cap.read()
@@ -69,10 +69,10 @@ def main():
 
         if len(contours) > 0:
             for contour in contours:
-                loop_color = green_color if compare_contours(contour, saved_contours, 1) else red_color
-                cv.drawContours(denoised_frame, [contour], -1, loop_color, 3)
-                cv.drawContours(original_frame, [contour], -1, loop_color, 3)
-                add_label(contour, original_frame, get_contour_label(my_dick_contours, contour), loop_color)
+                contour_color = green_color if compare_contours(contour, saved_contours, 1) else red_color
+                cv.drawContours(denoised_frame, [contour], -1, contour_color, 3) # this should work but its not working
+                cv.drawContours(original_frame, [contour], -1, contour_color, 3)
+                add_label(contour, original_frame, get_contour_label(my_contours_dict, contour), contour_color)
 
         cv.imshow(window_name, denoised_frame)
         cv.imshow(other_window_name, original_frame)
@@ -82,15 +82,12 @@ def main():
         if cv.waitKey(1) & 0xFF == ord('k'):
             if biggest_contour is not None:
                 input_label = input("Set a label for the contour: ")
-                my_dick_contours[input_label] = biggest_contour
+                my_contours_dict[input_label] = biggest_contour
 
         if cv.waitKey(1) & 0xFF == ord('q'): # close if Q was pressed
             break
 
     cap.release()
-
-
-
 
 
 main()
