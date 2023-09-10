@@ -34,7 +34,7 @@ def main():
     cv.createTrackbar("threshold", window_name, 100, 300, trackbar_dummy_function)
     cv.createTrackbar("kernel size", window_name, 10, 20, trackbar_dummy_function)
 
-    contour_color = (255, 0, 0)
+    contour_color = (0, 0, 255) 
     saved_contours = []
 
     while True:
@@ -50,11 +50,12 @@ def main():
         contours, _ = cv.findContours(denoised_frame, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
 
         if len(contours) > 0:
+            print("siuu")
             biggest_contour = get_biggest_contour(contours=contours)
             # hu_moments = get_hu_moments(contour=biggest_contour)
             if compare_contours(contour_to_compare=biggest_contour, saved_contours=saved_contours, max_diff=1):
                 cv.drawContours(denoised_frame, biggest_contour, -1, contour_color, 20)
-            cv.drawContours(denoised_frame, biggest_contour, -1, contour_color, 3)
+            cv.drawContours(denoised_frame, [biggest_contour], -1, contour_color, 3)
         
         cv.imshow(window_name, denoised_frame)
 
