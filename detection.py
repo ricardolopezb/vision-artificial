@@ -25,51 +25,72 @@ def compare_contours(contour_to_compare, saved_contours, max_diff):
         if cv.matchShapes(contour_to_compare, contour, cv.CONTOURS_MATCH_I2, 0) < max_diff:
             return True
     return False
+def add_label(contour, frame, label, color):
+    M = cv.moments(contour)
+    if M["m00"] != 0:
+        cX = int(M["m10"] / M["m00"])
+        cY = int(M["m01"] / M["m00"])
+        cv.putText(frame, label, (cX-31, cY), cv.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
+
+green_color = (0, 255, 0)
+red_color = (0, 0, 255)
+
+def get_contour_label(contour_labels_dict, compare_contour):
+    for label, contour in contour_labels_dict.items():
+        if cv.matchShapes(compare_contour, contour, cv.CONTOURS_MATCH_I2, 0) < 1:
+            return label
+    return "Not Found"
 
 def main():
     window_name = "TP1"
+    other_window_name = "XD"
     cv.namedWindow(window_name)
+    cv.namedWindow(other_window_name)
     cap = cv.VideoCapture(0)
 
     cv.createTrackbar("threshold", window_name, 100, 300, trackbar_dummy_function)
     cv.createTrackbar("kernel size", window_name, 10, 20, trackbar_dummy_function)
 
-    contour_color = (0, 0, 255) 
-    saved_contours = []
+    my_dick_contours = {}
+    saved_contours = my_dick_contours.values()
 
     while True:
-        ret, frame = cap.read()
-
+        _, original_frame = cap.read()
         threshold_value = cv.getTrackbarPos("threshold", window_name)
         kernel_radius_value = cv.getTrackbarPos("kernel size", window_name)
 
-        gray_frame = cv.cvtColor(frame, cv.COLOR_RGB2GRAY)
+
+        gray_frame = cv.cvtColor(original_frame, cv.COLOR_RGB2GRAY)
         _, thresh = cv.threshold(gray_frame, threshold_value, 255, 0) # could be changed for adaptiveThreshold
         denoised_frame = denoise(thresh, cv.MORPH_ELLIPSE, kernel_radius_value)
 
         contours, _ = cv.findContours(denoised_frame, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
 
         if len(contours) > 0:
-            print("siuu")
-            biggest_contour = get_biggest_contour(contours=contours)
-            # hu_moments = get_hu_moments(contour=biggest_contour)
-            if compare_contours(contour_to_compare=biggest_contour, saved_contours=saved_contours, max_diff=1):
-                cv.drawContours(denoised_frame, biggest_contour, -1, contour_color, 20)
-            cv.drawContours(denoised_frame, [biggest_contour], -1, contour_color, 3)
-        
+            for contour in contours:
+                loop_color = green_color if compare_contours(contour, saved_contours, 1) else red_color
+                cv.drawContours(denoised_frame, [contour], -1, loop_color, 3)
+                cv.drawContours(original_frame, [contour], -1, loop_color, 3)
+                add_label(contour, original_frame, get_contour_label(my_dick_contours, contour), loop_color)
+
         cv.imshow(window_name, denoised_frame)
+        cv.imshow(other_window_name, original_frame)
+
+        biggest_contour = get_biggest_contour(contours=contours)
 
         if cv.waitKey(1) & 0xFF == ord('k'):
-            print("Pressed k")
             if biggest_contour is not None:
-                print("biggest contour found")
-                # save_moment(hu_moments=hu_moments, file_name="hu_moments.txt")
-                saved_contours.append(biggest_contour)
+                input_label = input("Set a label for the contour: ")
+                my_dick_contours[input_label] = biggest_contour
 
         if cv.waitKey(1) & 0xFF == ord('q'): # close if Q was pressed
             break
 
     cap.release()
+
+
+
 
 
 main()
