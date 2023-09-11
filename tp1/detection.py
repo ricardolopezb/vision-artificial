@@ -13,6 +13,8 @@ def denoise(frame, method, radius):
 
 
 def get_biggest_contour(contours):
+    if len(contours) == 0:
+        return None
     max_cnt = contours[0]
     for cnt in contours:
         if cv.contourArea(cnt) > cv.contourArea(max_cnt):

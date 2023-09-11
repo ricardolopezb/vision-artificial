@@ -57,7 +57,8 @@ def main():
 
 
         gray_frame = cv.cvtColor(original_frame, cv.COLOR_RGB2GRAY)
-        _, thresh = cv.threshold(gray_frame, threshold_value, 255, 0) # could be changed for adaptiveThreshold
+
+        _, thresh = cv.threshold(gray_frame, threshold_value, 255, 0)  # could be changed for adaptiveThreshold
         denoised_frame = denoise(thresh, cv.MORPH_ELLIPSE, kernel_radius_value)
 
         contours, _ = cv.findContours(denoised_frame, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
