@@ -23,6 +23,17 @@ def get_biggest_contour(contours):
     return max_cnt
 
 
+def add_label():
+    label = input("Ingrese label: ")
+    description = input("Ingrese descripcion: ")
+    with open('labels.csv', 'a',
+              newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(numpy.append(int(label), description))
+        print("SAVED LABEL")
+    return label, description
+
+
 green_color = (0, 255, 0)
 red_color = (0, 0, 255)
 
@@ -37,8 +48,7 @@ def main():
     cv.createTrackbar("threshold", window_name, 100, 300, trackbar_dummy_function)
     cv.createTrackbar("kernel size", window_name, 10, 20, trackbar_dummy_function)
 
-    label = input("Ingrese label: ")
-    description = input("Ingrese descripcion: ")
+    label, description = add_label()
 
     while True:
         _, original_frame = cap.read()
@@ -73,6 +83,8 @@ def main():
             break
 
     cap.release()
+
+
 
 
 main()

@@ -1,5 +1,6 @@
 import cv2 as cv
 from joblib import load
+import pandas as pd
 
 
 def trackbar_dummy_function(x):
@@ -44,9 +45,15 @@ def get_contour_label(contour_labels_dict, compare_contour):
     return "Not Found"
 
 
+def read_labels_dataset():
+    column_names = ['Label', 'Description']  # Provide column names since there's no header
+    df = pd.read_csv('labels.csv', names=column_names)
+
+    return df.set_index('Label').to_dict()['Description']
 
 def main():
     classifier = load("filename.joblib")
+    labels_dict = read_labels_dataset()
 
     window_name = "TP1"
     other_window_name = "XD"
@@ -80,13 +87,10 @@ def main():
                 hu_moments = cv.HuMoments(cv.moments(contour)).tolist()
                 hu_moments = [item for sublist in hu_moments for item in sublist]
                 prediction = classifier.predict([hu_moments])
-                add_label(contour, original_frame, str(prediction), red_color)
+                add_label(contour, original_frame, labels_dict[int(prediction[0])], red_color)
 
         cv.imshow(window_name, denoised_frame)
         cv.imshow(other_window_name, original_frame)
-
-
-
 
         if cv.waitKey(1) & 0xFF == ord('q'): # close if Q was pressed
             break
