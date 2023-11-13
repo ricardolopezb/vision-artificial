@@ -1,101 +1,78 @@
-import cv2 as cv
+import cv2
 import numpy as np
-from PIL import ImageColor
 
-base_colours = ['#37AB65', '#3DF735', '#AD6D70', '#EC2504', '#8C0B90', '#C0E4FF', '#27B502', '#7C60A8', '#CF95D7',
-                '#37AB65']
-frame_window = 'Frame-Window'
-screenshot_window = 'Screenshot-Window'
-seeds_map_window = 'Seeds-Map-Window'
-watershed_result_window = 'Watershed-Result-Window'
+WEBCAM_ID = 0
 
+def initialize_variables():
+    base_colours = [[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 255], [0, 0, 0], [100, 255, 0],
+                    [100, 0, 255], [0, 100, 255], [0, 255, 100], [255, 100, 0]]
+    frame_window = 'Frame-Window'
+    seeds_map_window = 'Seeds-Map-Window'
+    watershed_result_window = 'Watershed-Result-Window'
+    return base_colours, frame_window, seeds_map_window, watershed_result_window
 
-def watershed(img):
-    markers = cv.watershed(img, np.int32(seeds))
-
-    img[markers == -1] = [0, 0, 255]
-    for n in range(1, 10):
-        img[markers == n] = ImageColor.getcolor(base_colours[n], "RGB")
-
-    cv.imshow(watershed_result_window, img)
-
-    cv.waitKey()
-
+def initialize_webcam(webcam_id):
+    cap = cv2.VideoCapture(webcam_id)
+    _, frame = cap.read()
+    h, w, _ = frame.shape
+    seeds = np.zeros((h, w), np.uint8)
+    return cap, frame, seeds, (h, w)
 
 def click_event(event, x, y, _flags, _params):
-    if event == cv.EVENT_LBUTTONDOWN:
+    if event == cv2.EVENT_LBUTTONDOWN:
         val = int(chr(selected_key))
         points.append(((x, y), val))
-        cv.circle(seeds, (x, y), 7, (val, val, val), thickness=-1)
+        cv2.circle(seeds, (x, y), 7, (val, val, val), thickness=-1)
+    return points, seeds
 
+def watershed(img, seeds, base_colours, watershed_result_window):
+    markers = cv2.watershed(img, np.int32(seeds))
+    img[markers == -1] = [0, 0, 255]
+    for n in range(1, 10):
+        img[markers == n] = base_colours[n]
+    cv2.imshow(watershed_result_window, img)
+    cv2.waitKey()
 
 def main():
-    global points
-    global seeds
-    global frame
-    global selected_key
+    base_colours, frame_window, seeds_map_window, watershed_result_window = initialize_variables()
+
+    cap, frame, seeds, sizeTuple = initialize_webcam(WEBCAM_ID)
+
     selected_key = 49  # 1 en ASCII
     points = []
-    seeds = np.zeros((480,640), np.uint8)
-    cv.namedWindow(frame_window)
-    cv.namedWindow(screenshot_window)
-    cv.namedWindow(seeds_map_window)
 
-
-    cap = cv.VideoCapture(0)
-    
     while True:
         _, frame = cap.read()
         frame_copy = frame.copy()
-        screenshot_copy = frame.copy()
         seeds_copy = seeds.copy()
-        key = cv.waitKey(100) & 0xFF
-        cv.imshow(frame_window, frame)
+
+        for point in points:
+            color = point[1]
+            val = point[1] * 20
+            x = point[0][0]
+            y = point[0][1]
+            cv2.circle(frame_copy, (x, y), 7, val, thickness=-1)
+            cv2.circle(seeds_copy, (x, y), 7, val, thickness=-1)
+            cv2.putText(frame_copy, str(point[1]), (x - 20, y - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7,
+                        color, 3)
+
+        cv2.imshow(frame_window, frame_copy)
+        map = cv2.applyColorMap(seeds_copy, cv2.COLORMAP_JET)
+        cv2.imshow(seeds_map_window, map)
+
+        key = cv2.waitKey(100) & 0xFF
+        if key == 32:
+            watershed(frame.copy(), seeds, base_colours, watershed_result_window)
+            points = []
+            seeds = np.zeros(sizeTuple, np.uint8)
+
+        if ord('1') <= key <= ord('9'):
+            selected_key = key
 
         if key == ord('q'):
             break
 
-        if key == 32:
-            cv.setMouseCallback(screenshot_window, click_event)
-
-            # This line returns the width and height of the screen that will be used for the seed
-            # x, y, w, h = cv.getWindowImageRect('Frame-Window')
-            # print(x, y, w, h)
-
-            while True:
-                for point in points:
-                    color = ImageColor.getcolor(base_colours[point[1]], "RGB")
-                    val = point[1] * 20
-
-                    x = point[0][0]
-                    y = point[0][1]
-                    cv.circle(screenshot_copy, (x, y), 7, val, thickness=-1)
-                    cv.circle(seeds_copy, (x, y), 7, val, thickness=-1)
-                    cv.putText(screenshot_copy, str(point[1]), (x - 20, y - 20), cv.FONT_HERSHEY_SIMPLEX, 0.7,
-                                color, 3)
-
-                map = cv.applyColorMap(seeds_copy, cv.COLORMAP_JET)
-                cv.imshow(seeds_map_window, map)
-                cv.imshow(screenshot_window, screenshot_copy)
-
-
-                key2 = cv.waitKey(100) & 0xFF
-
-                if ord('1') <= key2 <= ord('9'):
-                    selected_key = key2
-
-                if key2 == ord('t'):
-                    watershed(frame.copy())
-                    points = []
-                    seeds = np.zeros((480, 640), np.uint8)
-
-                if key2 == ord('q'):
-                    cv.destroyAllWindows()
-                    break
-
-
     cap.release()
 
-
 if __name__ == '__main__':
-    main()
+        main()
